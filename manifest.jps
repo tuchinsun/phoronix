@@ -1,23 +1,25 @@
 type: install
 version: 1.4
-name: Phoronix Perfomance Test
+name: Phoronix Performance Test
 logo: http://www.phoronix-test-suite.com/img/ptsLogo.png
 homepage: http://www.phoronix-test-suite.com/
 baseUrl: https://phoronix-test-suite.com/releases/
 description: Open-Source, Automated Benchmarking
 skipNodeEmails: true
 
+globals:
+  iteration:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+  timeout:    150000
+    
 settings:
   fields:
-    - type: list
-      caption: Phoronix Version
-      name: versionPhoronix
-      default: 8.2.0
+    - name: password
+      caption: Your password
+      type: string
+      cls: string
+      hidenLabel: true
       required: true
-      values:
-        "7.8.0": 7.8.0
-        "8.2.0": 8.2.0
-        "8.4.1": 8.4.1
+      inputType: password
     - type: checkbox
       caption: Test CPU
       name: cpu
@@ -35,12 +37,9 @@ settings:
       hideLabel: false
       
 nodes:
-- count: 1
-  cloudlets: 10
-  nodeType: centos7
-  nodeGroup: vds
-  port: 22
-  extip: true
+- cloudlets: 10
+  displayName: Phoronix Test Suite
+  image: jelastic/centosvps:7.9
 
 onInstall:
   - installPhoronix
@@ -52,60 +51,66 @@ onInstall:
     
 actions:
   installPhoronix:
-    cmd [centos7]: |-
-      yum install -y epel-release php-cli php-xml jsoup gcc gcc-c++ jq make autoconf automake curl glibc-static patch unzip bzip2 expat-devel libaio-devel >/dev/null 2>&1
-      wget ${baseUrl}/phoronix-test-suite-${settings.versionPhoronix}.tar.gz -qO - | tar xz -C /root
-      mkdir -p /var/cache/phoronix-test-suite/download-cache
-      wget -qO /var/cache/phoronix-test-suite/download-cache/c-ray-1.1.tar.gz http://www.phoronix-test-suite.com/benchmark-files/c-ray-1.1.tar.gz >/dev/null
-      wget -qO /var/cache/phoronix-test-suite/download-cache/ramsmp-3.5.0.tar.gz  http://sources.buildroot.net/ramsmp-3.5.0.tar.gz >/dev/null
-      wget -qO /var/cache/phoronix-test-suite/download-cache/fio-3.1.tar.gz http://brick.kernel.dk/snaps/fio-3.1.tar.gz >/dev/null
-      /root/phoronix-test-suite/phoronix-test-suite install pts/ramspeed >/var/log/install_ramspeed.log
-      /root/phoronix-test-suite/phoronix-test-suite install pts/fio >/var/log/install_fio.log
-      /root/phoronix-test-suite/phoronix-test-suite install pts/c-ray-1.1.0 >/var/log/install_cray.log
-       date +"%d/%m/%y %H:%M:%S" > /tmp/test_started
+    cmd [docker]: |-
+      mkdir -p /pts
+      yum install -y autoconf automake bc bzip2 curl epel-release expat-devel gcc gcc-c++ glibc-static jq jsoup libaio-devel make patch php-cli php-xml unzip wget >/dev/null 2>&1
+      wget -qO- https://phoronix-test-suite.com/releases/phoronix-test-suite-10.0.1.tar.gz | tar -xz --strip-components=1 -C /pts
+      wget -qO /usr/local/bin/pts-result.sh https://raw.githubusercontent.com/tuchinsun/phoronix/master/script/pts-result.sh
+      /pts/phoronix-test-suite install pts/ramspeed >/var/log/install_ramspeed.log
+      /pts/phoronix-test-suite install pts/fio >/var/log/install_fio.log
+      /pts/phoronix-test-suite install pts/c-ray-1.1.1 >/var/log/install_cray.log
+      echo -e "y\nn\nn\nn\nn\ny\nn\n" | /pts/phoronix-test-suite batch-setup >/dev/null
+      killall -9 php
   runCpuTest:
-    - cmd [centos7]: echo -e "n\n" | /root/phoronix-test-suite/phoronix-test-suite run pts/c-ray-1.1.0 > /root/cpu_test
+    - cmd [docker]: TEST_RESULTS_IDENTIFIER="jelastic" TEST_RESULTS_NAME="jelastic-cray" /pts/phoronix-test-suite batch-run pts/c-ray-1.1.1 >/root/cpu_test
   runRamTest:
-    - cmd [centos7]: echo -e "5\n1\nn\n" | /root/phoronix-test-suite/phoronix-test-suite run pts/ramspeed > /root/ram_test
-    - cmd [centos7]: echo -e "5\n2\nn\n" | /root/phoronix-test-suite/phoronix-test-suite run pts/ramspeed >> /root/ram_test
+    - cmd [docker]: TEST_RESULTS_IDENTIFIER="jelastic" TEST_RESULTS_NAME="jelastic-ramspeed-integer" PRESET_OPTIONS="ramspeed.run-type=Average; ramspeed.benchmark=Integer"  /pts/phoronix-test-suite batch-run pts/ramspeed >/root/ram_test
+    - cmd [docker]: TEST_RESULTS_IDENTIFIER="jelastic" TEST_RESULTS_NAME="jelastic-ramspeed-float" PRESET_OPTIONS="ramspeed.run-type=Average; ramspeed.benchmark=Floating Point"  /pts/phoronix-test-suite batch-run pts/ramspeed >>/root/ram_test
   runDiskTest:
-    - cmd [centos7]: echo -e "1\n3\n2\n2\n1\nn\n" | /root/phoronix-test-suite/phoronix-test-suite run pts/fio > /root/disk_test
-    - cmd [centos7]: echo -e "2\n3\n2\n2\n1\nn\n" | /root/phoronix-test-suite/phoronix-test-suite run pts/fio >> /root/disk_test
-  getResult:
-    # Run web server with results
-    - cmd [centos7]: |-
-        mkdir -p /var/www/html
-        echo -n 'CPU - ' > /var/www/html/result.html
-        grep 'Average:' /root/cpu_test | cut -d: -f2 | awk '{print $1}' | sed 's/[[:space:]]//g' |  sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" >> /var/www/html/result.html
-        echo -n 'RAM - ' >> /var/www/html/result.html
-        grep 'Average:' /root/ram_test | cut -d: -f2 | sed 's/[[:space:]]//g' |  sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | sed 's/KB\/s/ 1000/' | sed 's/MB\/s/ 1000000/' | tr "\n" " " | awk '{RESULT=($1*$2+$3*$4)/2 /1000000; print RESULT}' >> /var/www/html/result.html
-        echo -n 'Disk - ' >> /var/www/html/result.html
-        grep 'Average:' /root/disk_test | grep -v IOPS | cut -d: -f2 | sed 's/[[:space:]]//g' |  sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | sed 's/KB\/s/ 1000/' | sed 's/MB\/s/ 1000000/' | tr "\n" " " | awk '{RESULT=($1*$2+$3*$4)/2 /1000000; print RESULT}' >> /var/www/html/result.html
-        chmod 0777 /var/run/screen
-        screen -dmS WEBSERVER php -S 0.0.0.0:80 -t /var/www/html
-        echo 'CHECK RESULT URL http://'$(hostname)/result.html
+    - cmd [docker]: |-
+       echo 'TEST_RESULTS_IDENTIFIER="jelastic" TEST_RESULTS_NAME="jelastic-fio-randread" PRESET_OPTIONS="fio.type=randread; fio.engine=Sync; fio.buffered=No; fio.direct=Yes; fio.size=4k; fio.auto-disk-mount-points=/tmp" /pts/phoronix-test-suite batch-run pts/fio | tee /root/disk_test' > /tmp/phoronix_run.sh
+       chmod +x /tmp/phoronix_run.sh
+       screen -d -m /tmp/phoronix_run.sh
     
-    - cmd [centos7]: |-
-       grep 'Average:' /root/cpu_test | cut -d: -f2 | awk '{print $1}' | sed 's/[[:space:]]//g' |  sed "s,\x1B\[[0-9;]*[a-zA-Z],,g"
+    - forEach(item:globals.iteration):
+      - cmd[docker]: pgrep phoronix-test-s || echo 0
+      - if (${response.out} > 0):
+         sleep: ${globals.timeout}
+       
+    - cmd [docker]: |-
+       echo 'TEST_RESULTS_IDENTIFIER="jelastic" TEST_RESULTS_NAME="jelastic-fio-randwrite" PRESET_OPTIONS="fio.type=randwrite; fio.engine=Sync; fio.buffered=No; fio.direct=Yes; fio.size=4k; fio.auto-disk-mount-points=/tmp" /pts/phoronix-test-suite batch-run pts/fio | tee /root/disk_test' > /tmp/phoronix_run.sh
+       chmod +x /tmp/phoronix_run.sh
+       screen -d -m /tmp/phoronix_run.sh
+    
+    - forEach(item:globals.iteration):
+      - cmd[docker]: pgrep phoronix-test-s || echo 0
+      - if (${response.out} > 0):
+         sleep: ${globals.timeout}
+       
+  getResult:   
+    - cmd [docker]: /usr/local/bin/pts-result --cpu-result
     - setGlobals:
         cpu: ${response.out}
-    - cmd [centos7]: |-
-       grep 'Average:' /root/ram_test | cut -d: -f2 | sed 's/[[:space:]]//g' |  sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | sed 's/KB\/s/ 1000/' | sed 's/MB\/s/ 1000000/' | tr "\n" " " | awk '{RESULT=($1*$2+$3*$4)/2 /1000000; print RESULT}'
+    - cmd [docker]: /usr/local/bin/pts-result --ram-result
     - setGlobals:
         ram: ${response.out}
-    - cmd [centos7]: |-
-       grep 'Average:' /root/disk_test | grep -v IOPS | cut -d: -f2 | sed 's/[[:space:]]//g' |  sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | sed 's/KB\/s/ 1000/' | sed 's/MB\/s/ 1000000/' | tr "\n" " " | awk '{RESULT=($1*$2+$3*$4)/2 /1000000; print RESULT}'
+    - cmd [docker]: /usr/local/bin/pts-result --hdd-result
     - setGlobals:
         disk: ${response.out}
-    - cmd [centos7]: cat /tmp/test_started
+    - cmd [docker]: /usr/local/bin/pts-result --total-rate
+        rate: ${response.out}
+    - cmd [docker]: date +"%D %T"
     - setGlobals:
         date: ${response.out}
     - log:
-         RESULTS [ ${env.region} ] CPU - ${globals.cpu} RAM - ${globals.ram} Disk - ${globals.disk} 
+         RESULTS [ ${env.region} ] CPU - ${globals.cpu} RAM - ${globals.ram} DISK - ${globals.disk} RATE - ${globals.rate}
   stopPhoronix:
     - jelastic.environment.control.StopEnv:
         appid: ${env.appid}
-
+    - jelastic.environment.control.DeleteEnv:
+        appid: ${env.appid}
+        password: ${settings.password}
+       
     
 success: |
      ### Phoronix Test Finished     
@@ -116,3 +121,5 @@ success: |
      * CPU ${globals.cpu} sec
      * RAM ${globals.ram} MB/sec
      * Disk ${globals.disk} MB/sec
+     * RATE ${globals.rate}
+
