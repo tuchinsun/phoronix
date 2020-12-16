@@ -1,6 +1,7 @@
 type: install
 version: 1.4
-      
+name: Phoronix Performance Test
+
 nodes:
 - cloudlets: 10
   displayName: Phoronix Test Suite
