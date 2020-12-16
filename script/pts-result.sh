@@ -17,7 +17,7 @@ function get_cpu_result {
 }
 
 function get_cpu_rate {
-    cpu_result=$1
+    cpu_result=$(echo "$1 / 1" | bc)
     
     if [[ $cpu_result -gt ${cpu_raiting[0]} ]]; then
         echo 2
@@ -35,11 +35,11 @@ function get_cpu_rate {
 function get_ram_result {
     RAM_INT=$($PTS result-file-to-json jelastic-ramspeed-integer | jq -r ".results[0].results.jelastic.value")
     RAM_FL=$($PTS result-file-to-json jelastic-ramspeed-float | jq -r ".results[0].results.jelastic.value")
-    echo "($RAM_INT + $RAM_FL / 2) / 1" | bc
+    echo "$RAM_INT + $RAM_FL / 2" | bc
 }
 
 function get_ram_rate {
-    ram_result=$1
+    ram_result=$( echo "$1 / 1" | bc )
     
     if [[ $ram_result -lt ${ram_raiting[0]} ]]; then
         echo 2
@@ -57,11 +57,11 @@ function get_ram_rate {
 function get_hdd_result {
     HDDR=$($PTS result-file-to-json jelastic-fio-randread | jq -r ".results[0].results.jelastic.value")
     HDDW=$($PTS result-file-to-json jelastic-fio-randwrite | jq -r ".results[0].results.jelastic.value")
-    echo "($HDDR + $HDDW / 2) / 1" | bc
+    echo "$HDDR + $HDDW / 2" | bc
 }
 
 function get_hdd_rate {
-    hdd_result=$1
+    hdd_result=$(echo "$1 / 1" | bc)
     
     if [[ $hdd_result -lt ${hdd_raiting[0]} ]]; then
         echo 2
