@@ -7,12 +7,13 @@
 cpu_raiting=(155 122 93)
 ram_raiting=(10084 14051 18017)
 hdd_raiting=(63 123 183)
-PTS="/phoronix-test-suite/phoronix-test-suite"
+PTS="/pts/phoronix-test-suite"
 
 ### CPU
 
 function get_cpu_result {
-    echo $PTS result-file-to-json jelastic-cray | jq -r ".results[0].results.jelastic.value"
+    CPU=$($PTS result-file-to-json jelastic-cray | jq -r ".results[0].results.jelastic.value")
+    echo $CPU
 }
 
 function get_cpu_rate {
@@ -142,4 +143,4 @@ while [[ $# -ge 1 ]]; do
     shift
 done
 
-
+exit 0

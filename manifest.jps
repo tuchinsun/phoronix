@@ -10,6 +10,7 @@ skipNodeEmails: true
 globals:
   iteration:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
   timeout:    150000
+  vPhoronix:  10.0.1
   vCray:      1.1.1
   vRamspeed:  1.4.3
   vFio:       1.13.2
@@ -57,8 +58,9 @@ actions:
     cmd [docker]: |-
       mkdir -p /pts
       yum install -y autoconf automake bc bzip2 curl epel-release expat-devel gcc gcc-c++ glibc-static jq jsoup libaio-devel make patch php-cli php-xml unzip wget >/dev/null 2>&1
-      wget -qO- https://phoronix-test-suite.com/releases/phoronix-test-suite-10.0.1.tar.gz | tar -xz --strip-components=1 -C /pts
+      wget -qO- https://phoronix-test-suite.com/releases/phoronix-test-suite-${globals.vPhoronix}.tar.gz | tar -xz --strip-components=1 -C /pts
       wget -qO /usr/local/bin/pts-result.sh https://raw.githubusercontent.com/tuchinsun/phoronix/master/script/pts-result.sh
+      chmod +x /usr/local/bin/pts-result.sh
       /pts/phoronix-test-suite install pts/ramspeed-${globals.vRamspeed} >/var/log/install_ramspeed.log
       /pts/phoronix-test-suite install pts/fio-${globals.vFio} >/var/log/install_fio.log
       /pts/phoronix-test-suite install pts/c-ray-${globals.vCray} >/var/log/install_cray.log
