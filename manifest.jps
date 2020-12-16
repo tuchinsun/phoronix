@@ -32,10 +32,9 @@ onInstall:
     region: ${settings.region}
   - getResult
   - stopPhoronix
-  
-#  - env.control.DeleteEnv:
-#      envName: ${settings.envName}
-#      password: ${settings.password}
+  - env.control.DeleteEnv:
+      envName: ${settings.envName}
+      password: ${settings.password}
 
 
 actions:      
