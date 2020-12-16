@@ -17,13 +17,6 @@ globals:
     
 settings:
   fields:
-    - name: password
-      caption: Your password
-      type: string
-      cls: string
-      hidenLabel: true
-      required: true
-      inputType: password
     - type: checkbox
       caption: Test CPU
       name: cpu
@@ -39,6 +32,13 @@ settings:
       name: disk
       value: true
       hideLabel: false
+    - name: password
+      caption: Your password
+      type: string
+      cls: string
+      hidenLabel: true
+      required: true
+      inputType: password
       
 nodes:
 - cloudlets: 10
@@ -104,7 +104,7 @@ actions:
     - cmd [docker]: /usr/local/bin/pts-result.sh --total-rate
     - setGlobals:
         rate: ${response.out}
-    - cmd [docker]: date +"%D %T"
+    - cmd [docker]: date +"%F %T"
     - setGlobals:
         date: ${response.out}
     - log:
