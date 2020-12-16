@@ -7,64 +7,31 @@ baseUrl: https://phoronix-test-suite.com/releases/
 description: Open-Source, Automated Benchmarking
 skipNodeEmails: true
 
-globals:
-  iteration:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-  timeout:    150000
-  vPhoronix:  10.0.1
-  vCray:      1.1.1
-  vRamspeed:  1.4.3
-  vFio:       1.13.2
-  
 settings:
   fields:
-
-    - caption: Test CPU
-      type: checkbox
-      name: cpu
-      value: true
-
-    - caption: Test RAM
-      type: checkbox
-      name: ram
-      value: true
-
-    - caption: Test Disk I/O
-      type: checkbox
-      name: disk
-      value: true
-      
-    - caption: Password
-      type: string
-      inputType: password
-      name: password
-      
     - caption: Environment
       type: envname
       name: envName
       dependsOn: region
-      
+
     - caption: Region      
       type: regionlist
       name: region
       disableInactive: true
       selectFirstAvailable: true
-      
-onInstall:  
+
+    - caption: Password
+      type: string
+      inputType: password
+      name: password
+
+
+onInstall:
   - install: https://raw.githubusercontent.com/tuchinsun/phoronix/master/phoronix.jps
-    envName: ${settings.envName}      
+    envName: ${settings.envName}
     region: ${settings.region}
-          
+
   - env.control.DeleteEnv:
       envName: ${settings.envName}
       password: ${settings.password}
 
-success: |
-     ### Phoronix Test Finished     
-     **Started** ${globals.date}     
-     **Region** ${env.region}      
-     **Domain** ${env.domain}      
-           
-     * CPU ${globals.cpu} sec
-     * RAM ${globals.ram} MB/sec
-     * Disk ${globals.disk} MB/sec
-     * RATE ${globals.rate}

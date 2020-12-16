@@ -1,6 +1,34 @@
 type: install
 version: 1.4
 name: Phoronix Performance Test
+logo: http://www.phoronix-test-suite.com/img/ptsLogo.png
+homepage: http://www.phoronix-test-suite.com/
+baseUrl: https://phoronix-test-suite.com/releases/
+description: Open-Source, Automated Benchmarking
+skipNodeEmails: true
+
+globals:
+  iteration:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+  timeout:    150000
+  vPhoronix:  10.0.1
+  vCray:      1.1.1
+  vRamspeed:  1.4.3
+  vFio:       1.13.2
+
+settings:
+  fields:
+    - caption: Test CPU
+      type: checkbox
+      name: cpu
+      value: true
+    - caption: Test RAM
+      type: checkbox
+      name: ram
+      value: true
+    - caption: Test Disk I/O
+      type: checkbox
+      name: disk
+      value: true
 
 nodes:
 - cloudlets: 10
@@ -75,3 +103,13 @@ actions:
     - jelastic.environment.control.StopEnv:
         appid: ${env.appid}
 
+success: |
+     ### Phoronix Test Finished     
+     **Started** ${globals.date}     
+     **Region** ${env.region}      
+     **Domain** ${env.domain}      
+           
+     * CPU ${globals.cpu} sec
+     * RAM ${globals.ram} MB/sec
+     * Disk ${globals.disk} MB/sec
+     * RATE ${globals.rate}
