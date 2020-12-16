@@ -35,7 +35,7 @@ function get_cpu_rate {
 function get_ram_result {
     RAM_INT=$($PTS result-file-to-json jelastic-ramspeed-integer | jq -r ".results[0].results.jelastic.value")
     RAM_FL=$($PTS result-file-to-json jelastic-ramspeed-float | jq -r ".results[0].results.jelastic.value")
-    echo "$RAM_INT + $RAM_FL / 2"
+    echo "$RAM_INT + $RAM_FL / 2" | bc
 }
 
 function get_ram_rate {
@@ -57,7 +57,7 @@ function get_ram_rate {
 function get_hdd_result {
     HDDR=$($PTS result-file-to-json jelastic-fio-randread | jq -r ".results[0].results.jelastic.value")
     HDDW=$($PTS result-file-to-json jelastic-fio-randwrite | jq -r ".results[0].results.jelastic.value")
-    echo "$HDDR + $HDDW / 2"
+    echo "$HDDR + $HDDW / 2" | bc
 }
 
 function get_hdd_rate {
