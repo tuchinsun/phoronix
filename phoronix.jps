@@ -20,15 +20,15 @@ settings:
     - caption: Test CPU
       type: checkbox
       name: cpu
-      value: true
+      value: false
     - caption: Test RAM
       type: checkbox
       name: ram
-      value: true
+      value: false
     - caption: Test Disk I/O
       type: checkbox
       name: disk
-      value: true
+      value: false
 
 nodes:
 - cloudlets: 10
