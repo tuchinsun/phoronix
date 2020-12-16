@@ -111,7 +111,7 @@ while [[ $# -ge 1 ]]; do
         ;;
 
         --hdd-result)
-        get_ram_result
+        get_hdd_result
         shift
         ;;
         
